@@ -10,10 +10,26 @@ import Footer from './Components/Footer/Footer';
 import men_banner from './Components/Assets/banner_mens.png'
 import women_banner from './Components/Assets/banner_women.png'
 import kid_banner from './Components/Assets/banner_kids.png'
+import { useEffect, useState } from 'react';
+import Loader from './Components/Loader/Loader';
 
 
 function App() {
-  return (
+
+  //Loader State
+  const [isLoading,setIsLoading] = useState(true);
+
+  //Async Method To Fetch Fake Data
+  useEffect(()=>{
+    const fakeDataFetch = () => {
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 4000)
+    }
+    fakeDataFetch();
+  },[])
+  return isLoading? (
+    <Loader />):(    
     <div>
       <BrowserRouter>
         <Navbar />
@@ -40,8 +56,6 @@ function App() {
         <Footer />
       </BrowserRouter>
     </div>
-
-    
   );
 }
 

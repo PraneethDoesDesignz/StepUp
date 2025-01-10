@@ -1,7 +1,8 @@
 import React, { useContext, useRef, useState } from 'react'
 import './Navbar.css'
 
-import logo from '../Assets/logo.png'
+import logo from '../Assets/Outliers_Logo.png'
+import user_icon from '../Assets/user_icon.png'
 import cart_icon from '../Assets/cart_icon.png'
 import { Link } from 'react-router-dom'
 import { ShopContext } from '../../Context/ShopContext'
@@ -20,8 +21,7 @@ const Navbar = () => {
   return (
     <div className='navbar'>
       <div className="nav-logo">
-        <img src={logo} alt=""></img>
-        <p>StepUpStore</p>
+        <img src={logo} alt=""></img>                     
       </div>
       <img className='nav-dropdown' onClick = {dropdown_toggle} src={nav_dropdown} alt="" />
       <ul ref={menuRef} className="nav-menu">
@@ -29,11 +29,16 @@ const Navbar = () => {
         <li onClick={()=>{setMenu("men")}}><Link style={{textDecoration: 'none'}} to='/men'>Men</Link>{menu==="men"?<hr/>:<></>}</li>
         <li onClick={()=>{setMenu("women")}}><Link style={{textDecoration: 'none'}} to='/women'>Women</Link>{menu==="women"?<hr/>:<></>}</li>
         <li onClick={()=>{setMenu("kids")}}><Link style={{textDecoration: 'none'}} to='/kids'>Kids</Link>{menu==="kids"?<hr/>:<></>}</li>
+        <li onClick={()=>{setMenu("kids")}}><Link style={{textDecoration: 'none'}} to='/kids'>Contact</Link>{menu==="kids"?<hr/>:<></>}</li>
+        <li onClick={()=>{setMenu("kids")}}><Link style={{textDecoration: 'none'}} to='/kids'>About</Link>{menu==="kids"?<hr/>:<></>}</li>
       </ul>
+ 
       <div className="nav-login-cart">
+      <div className="login">
         {localStorage.getItem('auth-token')
         ?<button onClick={()=>{localStorage.removeItem('auth-token');window.location.replace('/')}}>Logout</button>
-        :<Link to='/login'><button>Login</button></Link>}
+        :<Link to='/login'><button><img src={user_icon} alt=''></img></button></Link>}
+        </div>
         <Link to='/cart'><img src={cart_icon} alt=""></img></Link>
         <div className="nav-cart-count">{getTotalCartItems()}</div>
       </div>
