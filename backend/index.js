@@ -68,6 +68,10 @@ const Product = mongoose.model("Product",{
         type:Number,
         required:true,
     },
+    size:{
+        type:String,
+        required:true,
+    },
     date:{
         type:Date,
         default:Date.now,
@@ -95,6 +99,7 @@ app.post('/addproduct',async(req,res)=>{
         name:req.body.name,
         image:req.body.image,
         category:req.body.category,
+        size:req.body.size,
         new_price:req.body.new_price,
         old_price:req.body.old_price,
     });
@@ -264,8 +269,6 @@ app.post('/getcart',fetchUser, async (req,res) => {
     let userData = await Users.findOne({_id:req.user.id});
     res.json(userData.cartData);    
 })
-
-
 
 
 app.listen(port,(error)=>{
