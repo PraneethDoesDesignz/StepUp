@@ -68,10 +68,6 @@ const Product = mongoose.model("Product",{
         type:Number,
         required:true,
     },
-    size:{
-        type:String,
-        required:true,
-    },
     date:{
         type:Date,
         default:Date.now,
@@ -99,7 +95,6 @@ app.post('/addproduct',async(req,res)=>{
         name:req.body.name,
         image:req.body.image,
         category:req.body.category,
-        size:req.body.size,
         new_price:req.body.new_price,
         old_price:req.body.old_price,
     });
@@ -245,23 +240,46 @@ const fetchUser = async (req,res,next) => {
 }
 
 //Creating Endpoint for Cart Data
-app.post('/addtocart', fetchUser, async (req,res)=> {
-    let userData = await Users.findOne({_id:req.user.id});
-    console.log("added",req.body.itemId);
-    userData.cartData[req.body.itemId] += 1;
-    await Users.findOneAndUpdate({_id:req.user.id},{cartData:userData.cartData});
-    res.send("Added To Cart");
-})
+app.post('/addtocart', fetchUser, async (req, res) => {
+    try {
+        let userData = await Users.findOne({ _id: req.user.id });
+        let { itemId, size } = req.body;
+
+        // Ensure cartData exists
+        if (!userData.cartData[itemId]) {
+            userData.cartData[itemId] = {};
+        }
+
+        // Increase quantity for the selected size
+        userData.cartData[itemId][size] = (userData.cartData[itemId][size] || 0) + 1;
+
+        await Users.findOneAndUpdate({ _id: req.user.id }, { cartData: userData.cartData });
+
+        res.json({ success: true, message: "Added To Cart" });
+    } catch (error) {
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 
 //Creating Endpoint To Remove From Cart Data
-app.post('/removefromcart', fetchUser, async (req,res) => {
-    let userData = await Users.findOne({_id:req.user.id});
-    console.log("removed",req.body.itemId);
-    if (userData.cartData[req.body.itemId]>0)
-    userData.cartData[req.body.itemId] -= 1;
-    await Users.findOneAndUpdate({_id:req.user.id},{cartData:userData.cartData});
-    res.send("Removed From Cart");
-}) 
+app.post('/removefromcart', fetchUser, async (req, res) => {
+    try {
+        let userData = await Users.findOne({ _id: req.user.id });
+        let { itemId, size } = req.body;
+
+        if (userData.cartData[itemId] && userData.cartData[itemId][size] > 0) {
+            userData.cartData[itemId][size] -= 1;
+        }
+
+        await Users.findOneAndUpdate({ _id: req.user.id }, { cartData: userData.cartData });
+
+        res.json({ success: true, message: "Removed From Cart" });
+    } catch (error) {
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 
 //Creating Endpoint to get Cart Data
 app.post('/getcart',fetchUser, async (req,res) => {
@@ -269,6 +287,42 @@ app.post('/getcart',fetchUser, async (req,res) => {
     let userData = await Users.findOne({_id:req.user.id});
     res.json(userData.cartData);    
 })
+
+// Creating Endpoint to Fetch Cart Products with Size Data
+app.post('/cartproducts', fetchUser, async (req, res) => {
+    try {
+        let userData = await Users.findOne({ _id: req.user.id });
+        if (!userData || !userData.cartData) {
+            return res.status(404).json({ error: "User cart not found" });
+        }
+
+        let cart = userData.cartData;
+
+        // Extract product IDs that have at least one non-zero size quantity
+        let productIds = Object.keys(cart).filter(id =>
+            typeof cart[id] === "object" && Object.values(cart[id]).some(qty => qty > 0)
+        ).map(Number);
+
+        if (productIds.length === 0) {
+            return res.json([]); // No products in cart
+        }
+
+        let productsInCart = await Product.find({ id: { $in: productIds } });
+
+        // Attach sizes & quantities to each product
+        let cartWithSizes = productsInCart.map(product => ({
+            ...product.toObject(),
+            sizes: cart[product.id] || {}  // Attach sizes from cart
+        }));
+
+        res.json(cartWithSizes);
+    } catch (error) {
+        console.error("Error fetching cart products:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+
 
 
 app.listen(port,(error)=>{
