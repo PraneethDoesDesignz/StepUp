@@ -10,74 +10,159 @@ const cors = require("cors");
 app.use(express.json());
 app.use(cors());
 
-// Databse Connection with MongoDB
-mongoose.connect("mongodb+srv://praneethtasp:Forbidden@cluster0.o5h7i.mongodb.net/StepUp")
+// Database Connection with MongoDB
+mongoose.connect("mongodb+srv://praneethtasp:Forbidden@cluster0.o5h7i.mongodb.net/StepUp", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
 
 // API Creation
-app.get("/",(req,res)=>{
-    res.send("Express App is Running")
-})
+app.get("/", (req, res) => {
+    res.send("Express App is Running");
+});
 
 // Image Storage Engine
 const storage = multer.diskStorage({
     destination: './upload/images',
-    filename: (req,file,cb)=>{
-        return cb(null,`${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
+    filename: (req, file, cb) => {
+        return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
     }
-})
+});
 
-
-
-const upload = multer({storage:storage})
-
+const upload = multer({ storage: storage });
+app.use('/images', express.static('upload/images'));
 
 // Creating Upload Endpoint for Images
-app.use('/images',express.static('upload/images'))
-
-app.post("/upload",upload.single('product'),(req,res)=>{
+app.post("/upload", upload.single('product'), (req, res) => {
     res.json({
-        success:1,
-        image_url:`http://localhost:${port}/images/${req.file.filename}`
-    })
-})
+        success: 1,
+        image_url: `http://localhost:${port}/images/${req.file.filename}`
+    });
+});
 
-// Schema for Creating Products
+// User Schema
+const Users = mongoose.model('Users', {
+    name: { type: String },
+    email: { type: String, unique: true },
+    password: { type: String },
+    cartData: { type: Object },
+    orders: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Order'  // This refers to the Order model
+    }],
+    date: { type: Date, default: Date.now },
+});
 
-const Product = mongoose.model("Product",{
-    id:{
+
+// Order Schema
+const Order = mongoose.model('Order', {
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Users',
+        required: true,
+    },
+    items: [{
+        productId: { type: Number, required: true },
+        quantity: { type: Number, required: true },
+        size: { type: String, required: true },
+    }],
+    totalAmount: {
         type: Number,
         required: true,
     },
-    name:{
-        type:String,
-        required:true,
+    shippingAddress: {
+        fullName: { type: String, required: true },
+        email: { type: String, required: true },
+        address: { type: String, required: true },
+        city: { type: String, required: true },
+        zip: { type: String, required: true },
+        country: { type: String, required: true },
     },
-    image:{
-        type:String,
-        required:true,
+    date: {
+        type: Date,
+        default: Date.now,
     },
-    category:{
-        type:String,
-        required:true,
-    },
-    new_price:{
-        type:Number,
-        required:true,
-    },
-    old_price:{
-        type:Number,
-        required:true,
-    },
-    date:{
-        type:Date,
-        default:Date.now,
-    },
-    available:{
-        type:Boolean,
-        default:true,
-    },
-})
+});
 
+// Product Schema
+const Product = mongoose.model("Product", {
+    id: { type: Number, required: true },
+    name: { type: String, required: true },
+    image: { type: String, required: true },
+    category: { type: String, required: true },
+    new_price: { type: Number, required: true },
+    old_price: { type: Number, required: true },
+    date: { type: Date, default: Date.now },
+    available: { type: Boolean, default: true },
+});
+
+// Middleware to fetch user
+const fetchUser = async (req, res, next) => {
+    const token = req.header('auth-token');
+    if (!token) {
+        return res.status(401).send({ errors: "Please Authenticate Using Valid Token" });
+    }
+    try {
+        const data = jwt.verify(token, 'secret_ecom');
+        req.user = data.user;
+        next();
+    } catch (error) {
+        return res.status(401).send({ errors: "Please Authenticate Using Valid Token" });
+    }
+};
+
+// Creating Endpoint to Place an Order
+app.post('/placeorder', fetchUser, async (req, res) => {
+    console.log("Request Body:", req.body); // Log the request body
+
+    const { items, totalAmount, shippingAddress } = req.body;
+
+    // Ensure items are provided
+    if (!items || items.length === 0) {
+        return res.status(400).json({ success: false, message: "No items provided" });
+    }
+
+    // Create a new order
+    const order = new Order({
+        userId: req.user.id,
+        items: items, // Ensure items from the request body are passed here
+        totalAmount: totalAmount,
+        shippingAddress: shippingAddress,
+    });
+
+    try {
+        // Save the order
+        await order.save();
+        console.log("Order saved:", order); // Log the saved order
+
+        // Update the user's orders array to include this new order
+        await Users.findByIdAndUpdate(req.user.id, {
+            $push: { orders: order._id }  // Push the order ID to the user's orders array
+        });
+
+        res.json({ success: true, message: "Order placed successfully", orderId: order._id });
+    } catch (error) {
+        console.error("Error placing order:", error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+});
+
+// Example: Fetching Orders for a User
+app.get('/myorders', fetchUser, async (req, res) => {
+    try {
+        const user = await Users.findById(req.user.id).populate('orders'); // Populate the orders with order data
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.json({ orders: user.orders });
+    } catch (error) {
+        console.error("Error fetching orders:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+
+//Creating API to add products
 app.post('/addproduct',async(req,res)=>{
     let products = await Product.find({});
     let id;
@@ -107,6 +192,8 @@ app.post('/addproduct',async(req,res)=>{
     })
 })
 
+
+
 // Creating API to delete Products
 app.post('/removeproduct',async(req,res)=>{
     await Product.findOneAndDelete({id:req.body.id});
@@ -126,78 +213,56 @@ app.get('/allproducts',async(req,res)=>{
     
 })
 
-// Schema Creating for User Model
-const Users = mongoose.model('Users',{
-    name:{
-        type:String,
-    },
-    email:{
-        type:String,
-        unique:true,
-    },
-    password:{
-        type:String,
-    },
-    cartData:{
-        type:Object,
-    },
-    date:{
-        type:Date,
-        default:Date.now,
-    }
-})
 
 // Creating Endpoint for Registering User
-app.post('/signup',async(req,res)=>{
-    let check = await Users.findOne({email:req.body.email});
-    if(check){
-        return res.status(400).json({success:false,errors:"Email Already Exists!"});
+app.post('/signup', async (req, res) => {
+    let check = await Users.findOne({ email: req.body.email });
+    if (check) {
+        return res.status(400).json({ success: false, errors: "Email Already Exists!" });
     }
     let cart = {};
     for (let i = 0; i < 300; i++) {
-        cart[i]=0;        
+        cart[i] = 0;
     }
     const user = new Users({
-        name:req.body.username,
-        email:req.body.email,
-        password:req.body.password,
-        cartData:cart,
-    })
+        name: req.body.username,
+        email: req.body.email,
+        password: req.body.password,
+        cartData: cart,
+    });
 
     await user.save();
 
     const data = {
-        user:{
-            id:user.id
+        user: {
+            id: user.id
         }
-    }
+    };
 
-    const token = jwt.sign(data,'secret_ecom');
-    res.json({success:true,token});
-})
+    const token = jwt.sign(data, 'secret_ecom');
+    res.json({ success: true, token });
+});
 
 // Creating Endpoint For User Login
-app.post('/login', async(req,res)=>{
-    let user = await Users.findOne({email:req.body.email});
+app.post('/login', async (req, res) => {
+    let user = await Users.findOne({ email: req.body.email });
     if (user) {
         const passCompare = req.body.password === user.password;
         if (passCompare) {
             const data = {
-                user:{
-                    id:user.id
+                user: {
+                    id: user.id
                 }
-            }
-            const token = jwt.sign(data,'secret_ecom');
-            res.json({success:true,token});
+            };
+            const token = jwt.sign(data, 'secret_ecom');
+            res.json({ success: true, token });
+        } else {
+            res.json({ success: false, errors: "Password Incorrect!" });
         }
-        else{
-            res.json({success:false,errors:"Password Incorrect!"});
-        }
+    } else {
+        res.json({ success: false, errors: "Incorrect Email ID" });
     }
-    else{
-        res.json({success:false,errors:"Incorrect Email ID"});
-    }
-})
+});
 
 // Creating Endpoint for New Collection Data
 app.get('/newcollections', async(req,res)=>{
@@ -222,22 +287,6 @@ app.get('/relatedproducts', async(req,res)=>{
     res.send(related_women);
 })
 
-//Creating Middleware to fetch User
-const fetchUser = async (req,res,next) => {
-    const token = req.header('auth-token');
-    if (!token) {
-        res.status(401).send({errors:"Please Authenticate Using Valid Token"});
-    }
-    else{
-        try {
-            const data = jwt.verify(token,'secret_ecom');
-            req.user = data.user;
-            next();
-        } catch (error) {
-            res.status(401).send({errors:"Please Authenticate Using Valid Token"});
-        }
-    }
-}
 
 //Creating Endpoint for Cart Data
 app.post('/addtocart', fetchUser, async (req, res) => {

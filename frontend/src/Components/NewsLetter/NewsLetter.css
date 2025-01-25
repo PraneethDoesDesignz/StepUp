@@ -7,44 +7,54 @@
     justify-content: center;
     margin: auto;
     padding: 0px 140px;
-    margin-bottom: 150px;
-    background: linear-gradient(180deg, #fde1ff 0%, #e1ffea22 60%);
     gap: 30px;
+}
+.footer-image img{
+    transform: translateY(-12%);
+    width: 100%;
+    height: 120%;
+    position: absolute;
+    left: 0;
 }
 .newsletter h1{
     color: #454545;
     font-size: 55px;
     font-weight: 600;
+    z-index: 1;
+    text-align: center;
 }
 .newsletter p{
     color: #454545;
     font-size: 20px;
+    z-index: 1;
 }
-.newsletter div{
+.newsletter .input-content{
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: white;
+    background: #f5cad7;
     width: 730px;
     height: 70px;
     border-radius: 80px;
-    border: 0.8px solid #454545;
+    z-index: 1;
 }
-.newsletter input{
+.newsletter .input-content input{
     width: 490px;
     margin-left: 30px;
     border: none;
     outline: none;
-    color: #616161;
+    background: transparent;
     font-family: 'Poppins';
-    font-size: 16px;
+    font-size: 19px;
 }
-.newsletter div button{
+.newsletter .input-content button{
     width: 220px;
     height: 70px;
     border-radius: 50px;
-    background: black;
-    color: rgb(173, 167, 167);
+    border: none;
+    outline: none;
+    background: #ee3569b2;
+    color: #2c2c2c;
     font-size: 20px;
     cursor: pointer;
 }

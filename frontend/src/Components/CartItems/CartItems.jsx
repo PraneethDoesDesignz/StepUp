@@ -1,3 +1,4 @@
+// CartItems.js
 import React, { useContext } from 'react';
 import './CartItems.css';
 import { ShopContext } from '../../Context/ShopContext';
@@ -6,11 +7,15 @@ import { useNavigate } from 'react-router-dom';
 
 const CartItems = () => {
     const { all_product, cartItems, removeFromCart } = useContext(ShopContext);
-    const navigate = useNavigate();  // useNavigate hook to navigate to checkout page
+    const navigate = useNavigate();
 
     const handleCheckout = () => {
-        // Navigate to the checkout page
-        navigate('/checkout');
+        // Navigate to the checkout page while passing cartItems
+        navigate('/checkout', { state: { cartItems } });
+    };
+
+    const backtoHome = () => {
+        navigate('/');
     };
 
     return (
@@ -30,7 +35,7 @@ const CartItems = () => {
                 const item = all_product.find((product) => product.id === Number(id));
                 if (!item) return null;
 
-                const sizes = cartItems[id]; // Object with sizes and quantities
+                const sizes = cartItems[id];
                 return Object.keys(sizes).map((size) => {
                     const quantity = sizes[size];
 
@@ -61,7 +66,8 @@ const CartItems = () => {
 
             <div className="cartitems-down">
                 <div className="cartitems-total">
-                    <button onClick={handleCheckout}>Proceed To Checkout</button>  {/* Button now triggers checkout */}
+                    <button onClick={handleCheckout}>Proceed To Checkout</button>
+                    <button onClick={backtoHome}>Back To Home</button>
                 </div>
             </div>
         </div>

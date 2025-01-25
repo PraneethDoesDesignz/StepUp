@@ -14,6 +14,8 @@ import kid_banner from './Components/Assets/banner_kids.png';
 import { useEffect, useState } from 'react';
 import Loader from './Components/Loader/Loader';
 import Checkout from './Components/Checkout/Checkout'; // Import Checkout page
+import Contact from './Components/Contact/Contact';
+import About from './Components/About/About';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -39,6 +41,9 @@ function App() {
           <Route path="/men" element={<ShopCategory banner={men_banner} category="men" />} />
           <Route path="/women" element={<ShopCategory banner={women_banner} category="women" />} />
           <Route path="/kids" element={<ShopCategory banner={kid_banner} category="kids" />} />
+          <Route path="/contact" element={<Contact />} /> {/* Add Contact Route */}
+          <Route path="/about" element={<About />} /> Add About Route
+
           <Route path="/product" element={<Product />}>
             <Route path=":productId" element={<Product />} />
           </Route>

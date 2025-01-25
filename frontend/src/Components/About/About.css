@@ -1,0 +1,42 @@
+/*ABOUT PAGE STARTS*/
+
+ #about-head img{
+    width: 50%;
+    height: auto;
+    margin-top: 50px;
+    margin-bottom: 50px;
+    border-radius: 13px;
+    margin-left: 20px;
+ }
+ #about-head{
+    display: flex;
+    align-items: center;
+ }
+ #about-head h2{
+    text-align: center;
+ }
+ #about-head p{
+    margin-right: 70px;
+    text-align: justify;
+    font-size: 18px;
+    line-height: 1.5rem;
+ }
+ #about-head div{
+    padding-left: 40px;
+ }
+ #shopping-ad{
+    text-align: center;
+    margin-top: 50px;
+ }
+ #shopping-ad .video{
+    width: 70%;
+    height: 100%;
+    margin: 30px auto 0 auto;
+ }
+ #shopping-ad .video video{
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+ }
+ /*ABOUT PAGE ENDS*/
+ 
