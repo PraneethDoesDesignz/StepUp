@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(cors());
 
 // Database Connection with MongoDB
-mongoose.connect("mongodb+srv://praneethtasp:Forbidden@cluster0.o5h7i.mongodb.net/StepUp", {
+mongoose.connect("<Your Connection String>", {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
